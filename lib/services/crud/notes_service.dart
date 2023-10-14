@@ -126,11 +126,8 @@ class NotesService {
     }
     const text = '';
     //create the note
-    final noteId = await db.insert(noteTable, {
-      userIdColumn: owner.id,
-      textColumn: text,
-      isSyncedWithCloudColumn: 1,
-    });
+    final noteId = await db.insert(noteTable,
+        {userIdColumn: owner.id, textColumn: text, isSyncedWithCloudColumn: 1});
 
     final note = DatabaseNote(
       id: noteId,
@@ -298,7 +295,7 @@ const noteTable = 'note';
 const userTable = 'user';
 const idColumn = 'id';
 const emailColumn = 'email';
-const userIdColumn = 'user-id';
+const userIdColumn = 'user_id';
 const textColumn = 'text';
 const isSyncedWithCloudColumn = 'is_synced_with_cloud';
 const createUserTable = '''CREATE TABLE IF NOT EXISTS"user" (
