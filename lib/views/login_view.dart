@@ -1,10 +1,13 @@
 // ignore_for_file: avoid_print, use_build_context_synchronously
 
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/constants/routes.dart';
 import 'package:flutter_application_1/services/auth/auth_exception.dart';
-import 'package:flutter_application_1/services/auth/auth_service.dart';
+import 'package:flutter_application_1/services/auth/bloc/auth_bloc.dart';
+import 'package:flutter_application_1/services/auth/bloc/auth_event.dart';
+import 'package:flutter_application_1/services/auth/bloc/auth_state.dart';
 import 'package:flutter_application_1/utilities/dialogs/error_dialog.dart';
+import 'package:flutter_application_1/utilities/dialogs/loading_dialog.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 class LoginView extends StatefulWidget {
   const LoginView({super.key});
@@ -16,6 +19,7 @@ class LoginView extends StatefulWidget {
 class _LoginViewState extends State<LoginView> {
   late final TextEditingController _email;
   late final TextEditingController _password;
+  CloseDialog? _closeDialoghandle;
 
   @override
   void initState() {
@@ -33,72 +37,73 @@ class _LoginViewState extends State<LoginView> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Login'),
-      ),
-      body: Column(
-        children: [
-          TextField(
-            controller: _email,
-            enableSuggestions: false,
-            autocorrect: false,
-            keyboardType: TextInputType.emailAddress,
-            decoration: const InputDecoration(hintText: "email"),
-          ),
-          TextField(
-            controller: _password,
-            obscureText: true,
-            enableSuggestions: false,
-            autocorrect: false,
-            decoration: const InputDecoration(hintText: "password"),
-          ),
-          TextButton(
-            onPressed: () async {
-              final email = _email.text;
-              final password = _password.text;
-              try {
-                await AuthService.firebase().logIn(
-                  email: email,
-                  password: password,
-                );
-                final user = AuthService.firebase().currentUser;
-                if (user?.isEmailVerfied ?? false) {
-                  //user email verified
-                  Navigator.of(context).pushNamedAndRemoveUntil(
-                    notesRoute,
-                    (route) => false,
-                  );
-                } else {
-                  //user email is not verified
-                  Navigator.of(context).pushNamedAndRemoveUntil(
-                    verfiyEmailRoute,
-                    (route) => false,
-                  );
-                }
-              } on InvalidCredentialsAuthException {
-                await showErrorDialog(
-                  context,
-                  'Invalid Credentials',
-                );
-              } on GenericAuthException {
-                await showErrorDialog(
-                  context,
-                  'Authentication Error',
-                );
-              }
-            },
-            child: const Text('Login'),
-          ),
-          TextButton(
-              onPressed: () {
-                Navigator.of(context).pushNamedAndRemoveUntil(
-                  registerRoute,
-                  (route) => false,
-                );
+    return BlocListener<AuthBloc, AuthState>(
+      listener: (context, state) async {
+        if (state is AuthStateLoggedOut) {
+          final closeDialog = _closeDialoghandle;
+          if (!state.isLoading && closeDialog != null) {
+            closeDialog();
+            _closeDialoghandle = null;
+          } else if (state.isLoading && closeDialog == null) {
+            _closeDialoghandle = showLoadingDialog(
+              context: context,
+              text: 'Loading...',
+            );
+          }
+
+          if (state.exception is InvalidCredentialsAuthException) {
+            await showErrorDialog(
+              context,
+              'Invalid Credentials',
+            );
+          } else if (state.exception is GenericAuthException) {
+            await showErrorDialog(
+              context,
+              'Authentication error',
+            );
+          }
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Login'),
+        ),
+        body: Column(
+          children: [
+            TextField(
+              controller: _email,
+              enableSuggestions: false,
+              autocorrect: false,
+              keyboardType: TextInputType.emailAddress,
+              decoration: const InputDecoration(hintText: "email"),
+            ),
+            TextField(
+              controller: _password,
+              obscureText: true,
+              enableSuggestions: false,
+              autocorrect: false,
+              decoration: const InputDecoration(hintText: "password"),
+            ),
+            TextButton(
+              onPressed: () async {
+                final email = _email.text;
+                final password = _password.text;
+                context.read<AuthBloc>().add(AuthEventLogIn(
+                      email,
+                      password,
+                    ));
               },
-              child: const Text('Not registeerd yet?  Register here.'))
-        ],
+              child: const Text('Login'),
+            ),
+            TextButton(
+                onPressed: () {
+                  context.read<AuthBloc>().add(
+                        const AuthEventShouldRegister(),
+                      );
+                },
+                child: const Text('Not registeerd yet?  Register here.'))
+          ],
+        ),
       ),
     );
   }
