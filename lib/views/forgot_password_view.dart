@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/extensions/buildcontext/loc.dart';
 import 'package:flutter_application_1/services/auth/bloc/auth_bloc.dart';
 import 'package:flutter_application_1/services/auth/bloc/auth_event.dart';
 import 'package:flutter_application_1/services/auth/bloc/auth_state.dart';
@@ -41,47 +42,50 @@ class _ForgotPasswordViewState extends State<ForgotPasswordView> {
             // ignore: use_build_context_synchronously
             await showErrorDialog(
               context,
-              'could not proccess request',
+              // ignore: use_build_context_synchronously
+              context.loc.forgot_password_view_generic_error,
             );
           }
         }
       },
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Forgot Password'),
+          title: Text(context.loc.forgot_password),
         ),
         body: Padding(
           padding: const EdgeInsets.all(16.0),
-          child: Column(
-            children: [
-              const Text('enter your email'),
-              TextField(
-                keyboardType: TextInputType.emailAddress,
-                autocorrect: false,
-                autofocus: true,
-                controller: _controller,
-                decoration: const InputDecoration(
-                  helperText: 'Your email..',
+          child: SingleChildScrollView(
+            child: Column(
+              children: [
+                Text(context.loc.forgot_password_view_prompt),
+                TextField(
+                  keyboardType: TextInputType.emailAddress,
+                  autocorrect: false,
+                  autofocus: true,
+                  controller: _controller,
+                  decoration: InputDecoration(
+                    helperText: context.loc.email_text_field_placeholder,
+                  ),
                 ),
-              ),
-              TextButton(
-                onPressed: () {
-                  final email = _controller.text;
-                  context.read<AuthBloc>().add(
-                        AuthEventForgotPassword(email: email),
-                      );
-                },
-                child: const Text('Send me password reset email'),
-              ),
-              TextButton(
-                onPressed: () {
-                  context.read<AuthBloc>().add(
-                        const AuthEventLogout(),
-                      );
-                },
-                child: const Text('Back to login page'),
-              )
-            ],
+                TextButton(
+                  onPressed: () {
+                    final email = _controller.text;
+                    context.read<AuthBloc>().add(
+                          AuthEventForgotPassword(email: email),
+                        );
+                  },
+                  child: Text(context.loc.forgot_password_view_send_me_link),
+                ),
+                TextButton(
+                  onPressed: () {
+                    context.read<AuthBloc>().add(
+                          const AuthEventLogout(),
+                        );
+                  },
+                  child: Text(context.loc.forgot_password_view_back_to_login),
+                )
+              ],
+            ),
           ),
         ),
       ),
